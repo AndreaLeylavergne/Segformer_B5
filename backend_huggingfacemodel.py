@@ -13,9 +13,9 @@ from transformers import SegformerForSemanticSegmentation, SegformerImageProcess
 import rasterio
 import matplotlib.pyplot as plt
 
-app = FastAPI() #delete when charging the model 
+#app = FastAPI() #delete when charging the model 
 
-"""# Configure logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 
 # Chemin vers le dossier contenant les fichiers de votre modèle
@@ -179,7 +179,7 @@ async def evaluate_masks(data: dict):
         "annotated_mask": "data:image/png;base64," + annotated_data_url,
         "predicted_mask": "data:image/png;base64," + predicted_data_url
     })
-"""
+
 @app.get("/")
 def root():
     return {"Greeting": "Hello, World!"}
