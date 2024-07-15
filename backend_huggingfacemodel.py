@@ -34,7 +34,8 @@ app = FastAPI(lifespan=lifespan)
 
 class ImageID(BaseModel):
     image_id: str
-  
+    
+"""  
 # Paths of images and annotated masks
 images_paths = {
     "image1": "./dataset/images_prepped/val/0000FT_000294.png",
@@ -179,7 +180,7 @@ async def evaluate_masks(data: dict):
         "annotated_mask": "data:image/png;base64," + annotated_data_url,
         "predicted_mask": "data:image/png;base64," + predicted_data_url
     })
-
+"""
 @app.get("/")
 def root():
     return {"Greeting": "Hello, World!"}
