@@ -15,6 +15,23 @@ import matplotlib.pyplot as plt
 
 app = FastAPI() #delete when charging the model 
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Chemin vers le dossier contenant les fichiers de votre modèle
+MODEL_DIR = "AndreaLeylavergne/segformer_B0_B5"
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global model, processor
+    processor = SegformerImageProcessor.from_pretrained(MODEL_DIR)
+    model = SegformerForSemanticSegmentation.from_pretrained(MODEL_DIR)
+    logging.info("Model loaded successfully")
+    
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
 class ImageID(BaseModel):
     image_id: str
     
