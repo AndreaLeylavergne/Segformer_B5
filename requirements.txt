@@ -1,4 +1,4 @@
-fastapi==0.111.0
+fastapi
 uvicorn
 transformers
 torch
@@ -6,8 +6,7 @@ rasterio
 pillow
 aiohttp
 gunicorn
-opencv-python-headless==4.10.0.84
+opencv-python-headless
 matplotlib
-accelerate==0.32.1
-bitsandbytes==0.43.1
+
 
