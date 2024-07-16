@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 
 app = FastAPI() #delete when charging the model 
 
+class ImageID(BaseModel):
+    image_id: str
+    
 # Paths of images and annotated masks
 images_paths = {
     "image1": "./dataset/images_prepped/val/0000FT_000294.png",
@@ -89,6 +92,76 @@ def calculate_iou(array1, array2):
     union = np.sum(array1_binary) + np.sum(array2_binary) - intersection
 
     return intersection / union if union > 0 else 0
+
+@app.post("/predict/")
+async def predict_mask(data: ImageID):
+    image_id = data.image_id
+    if image_id not in images_paths:
+        raise HTTPException(status_code=404, detail="Image ID not found")
+    
+    image_path = images_paths[image_id]
+    #pr, overlay_image = predict(model, processor, image_path)
+    pred_seg, image = predict(model, processor, image_path)
+
+    # Convert the predicted mask to a color image for better visualization
+    color_pred_mask = map_colors(pred_seg)
+    color_pred_mask_image = Image.fromarray(color_pred_mask.astype(np.uint8))
+
+    annotated_mask_path = annotated_masks_paths[image_id]
+    annotated_mask_image = cv2.imread(annotated_mask_path, cv2.IMREAD_GRAYSCALE)
+    annotated_mask_image = (annotated_mask_image / annotated_mask_image.max()) * 255
+    annotated_mask_image = Image.fromarray(annotated_mask_image.astype(np.uint8)).resize((256, 128))
+
+    color_pred_mask_stream = io.BytesIO()
+    annotated_mask_stream = io.BytesIO()
+        
+    color_pred_mask_image.save(color_pred_mask_stream, format='PNG')
+    annotated_mask_image.save(annotated_mask_stream, format='PNG')
+    
+    color_pred_mask_stream.seek(0)
+    annotated_mask_stream.seek(0)
+        
+    color_pred_mask_data_url = base64.b64encode(color_pred_mask_stream.read()).decode('utf8')
+    annotated_data_url = base64.b64encode(annotated_mask_stream.read()).decode('utf8')
+        
+    return JSONResponse(content={
+        "annotated_mask": "data:image/png;base64," + annotated_data_url,
+        "predicted_mask": "data:image/png;base64," + color_pred_mask_data_url
+    })
+
+@app.post("/evaluate/")
+async def evaluate_masks(data: dict):
+    annotated_mask_data = data['annotated_mask']
+    predicted_mask_data = data['predicted_mask']
+    
+    try:
+        annotated_mask = Image.open(io.BytesIO(base64.b64decode(annotated_mask_data.split(',')[1]))).resize((256, 128))
+        predicted_mask = Image.open(io.BytesIO(base64.b64decode(predicted_mask_data.split(',')[1]))).resize((256, 128))
+        predicted_mask = predicted_mask.convert("L") #Covert "L" converts en grayscale the mask before evaluating. Important for obtainig IoU
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error decoding images: {str(e)}")
+    
+    annotated_mask_array = np.array(annotated_mask)
+    predicted_mask_array = np.array(predicted_mask)
+    iou_score = calculate_iou(annotated_mask_array, predicted_mask_array)
+    
+    annotated_mask_stream = io.BytesIO()
+    mask_image_stream = io.BytesIO()
+    
+    annotated_mask.save(annotated_mask_stream, format='PNG')
+    predicted_mask.save(mask_image_stream, format='PNG')
+    
+    annotated_mask_stream.seek(0)
+    mask_image_stream.seek(0)
+    
+    annotated_data_url = base64.b64encode(annotated_mask_stream.read()).decode('utf8')
+    predicted_data_url = base64.b64encode(mask_image_stream.read()).decode('utf8')
+    
+    return JSONResponse(content={
+        "iou_score": iou_score,
+        "annotated_mask": "data:image/png;base64," + annotated_data_url,
+        "predicted_mask": "data:image/png;base64," + predicted_data_url
+    })
 
 @app.get("/")
 def root():
