@@ -8,5 +8,5 @@ aiohttp
 gunicorn
 opencv-python-headless
 matplotlib
-
+plotly
 
