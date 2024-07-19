@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 st.title("Segmentation sémantique avec Segformer (PoC)")
 
 st.write("### Nous avons avons comparée les performances de VGG-Unet et de Segformer pour la segmentation sémantique des images.")
-st.write("### Voici un aperçu des résultats et un espace pour tester vous même les la performance des prédictions.")
+st.write("### Voici un aperçu des résultats et un espace pour tester vous même les performances des prédictions.")
 
 # Charger le fichier CSV
 data_file = "./results_POC.csv"  
